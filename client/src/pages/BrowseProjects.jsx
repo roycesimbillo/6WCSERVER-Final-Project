@@ -81,14 +81,17 @@ export default function BrowseProjects({ currentUser }) {
   });
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+    <div className="flex h-screen bg-gradient-modern">
       <Sidebar currentUser={currentUser} />
 
       <div className="flex-1 overflow-auto">
-        <div className="p-6 max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Browse Projects</h1>
+        <div className="p-8 max-w-7xl mx-auto">
+          <div className="mb-8 animate-fadeInDown">
+            <h1 className="text-5xl font-bold mb-2 text-gradient">Browse Projects</h1>
+            <p className="text-muted-foreground text-lg">Discover amazing projects from the community</p>
+          </div>
 
-          <div className="mb-6">
+          <div className="mb-8 animate-fadeInUp">
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
@@ -96,7 +99,7 @@ export default function BrowseProjects({ currentUser }) {
             />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8">
             <FilterPanel
               selectedCourse={selectedCourse}
               selectedTags={selectedTags}
@@ -105,29 +108,41 @@ export default function BrowseProjects({ currentUser }) {
               onClearFilters={handleClearFilters}
             />
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               {loading && (
-                <p className="text-muted-foreground">Loading projects...</p>
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="text-lg font-semibold text-muted-foreground mb-2 animate-pulse">Loading projects...</div>
+                    <div className="h-1 w-32 mx-auto bg-gradient-to-r from-primary via-secondary to-accent rounded-full animate-pulse"></div>
+                  </div>
+                </div>
               )}
 
               {error && (
-                <p className="text-destructive">
-                  ⚠️ {error}
-                </p>
+                <div className="p-6 bg-destructive/10 border border-destructive/30 rounded-lg">
+                  <p className="text-destructive font-semibold flex items-center gap-2">
+                    <span className="text-xl">⚠️</span> {error}
+                  </p>
+                </div>
               )}
 
               {!loading && !error && filteredProjects.length === 0 && (
-                <p className="text-muted-foreground">No projects found.</p>
+                <div className="text-center py-12">
+                  <div className="text-2xl mb-2">🚀</div>
+                  <p className="text-lg text-muted-foreground">No projects found.</p>
+                  <p className="text-sm text-muted-foreground mt-2">Try adjusting your search or filters</p>
+                </div>
               )}
 
               {!loading &&
                 !error &&
-                filteredProjects.map((project) => (
-                  <ProjectCard
-                    key={project._id || project.id}
-                    project={project}
-                    currentUser={currentUser}
-                  />
+                filteredProjects.map((project, idx) => (
+                  <div key={project._id || project.id} className="animate-fadeInUp" style={{animationDelay: `${idx * 50}ms`}}>
+                    <ProjectCard
+                      project={project}
+                      currentUser={currentUser}
+                    />
+                  </div>
                 ))}
             </div>
           </div>

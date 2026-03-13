@@ -33,7 +33,7 @@ export default function Dashboard({ currentUser }) {
   }, [currentUser?.role]);
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+    <div className="flex h-screen bg-gradient-modern">
       <Sidebar
         currentUser={currentUser}
         pendingCount={0} 
@@ -48,24 +48,41 @@ export default function Dashboard({ currentUser }) {
       />
 
       <div className="flex-1 overflow-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 p-6 max-w-7xl mx-auto">
-          <div className="space-y-6">
-            {/* Feed */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 p-8 max-w-7xl mx-auto">
+          <div className="space-y-8 animate-fadeInUp">
+            {/* Feed Header */}
             <div>
-              <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Feed</h2>
-              <div className="space-y-4">
-                {(feedProjects || []).map((project) => (
-                  <ProjectCard key={project._id || project.id} project={project} currentUser={currentUser} />
-                ))}
+              <div className="mb-2">
+                <span className="inline-block px-4 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-cyan-600 text-white text-xs font-semibold uppercase tracking-wider">Latest</span>
+              </div>
+              <h2 className="text-4xl font-bold mb-8 text-gradient">Project Feed</h2>
+              <div className="space-y-5">
+                {(feedProjects || []).length > 0 ? (
+                  (feedProjects || []).map((project, idx) => (
+                    <div key={project.id || project._id} className="animate-fadeInUp" style={{ animationDelay: `${idx * 100}ms` }}>
+                      <ProjectCard project={project} currentUser={currentUser} />
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground text-lg">No projects available yet</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* Sidebar Widgets */}
-          <div className="space-y-4">
-            <ProfileCard user={currentUser} />
-            <RecentApprovedWidget projects={recentProjects || []} />
-            <TopProjectsWidget />
+          <div className="space-y-6">
+            <div className="animate-slideInRight" style={{ animationDelay: '100ms' }}>
+              <ProfileCard user={currentUser} />
+            </div>
+            <div className="animate-slideInRight" style={{ animationDelay: '200ms' }}>
+              <RecentApprovedWidget projects={recentProjects || []} />
+            </div>
+            <div className="animate-slideInRight" style={{ animationDelay: '300ms' }}>
+              <TopProjectsWidget />
+            </div>
           </div>
         </div>
       </div>

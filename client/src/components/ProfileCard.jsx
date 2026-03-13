@@ -49,54 +49,67 @@ export default function ProfileCard({ user }) {
     .join("")
     .toUpperCase() || "U";
 
+  // Parse profile picture if it's a JSON string
+  let profilePictureUrl = null;
+  if (userProfile?.profilePicture) {
+    try {
+      const pic = typeof userProfile.profilePicture === 'string' 
+        ? JSON.parse(userProfile.profilePicture) 
+        : userProfile.profilePicture;
+      profilePictureUrl = pic?.path;
+    } catch (e) {
+      profilePictureUrl = userProfile.profilePicture?.path || null;
+    }
+  }
+
   return (
-    <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 border-0 shadow-xl" data-testid="card-profile">
-      <div className="flex flex-col items-center text-center space-y-4">
-        <Avatar className="h-24 w-24 ring-4 ring-blue-100">
-          {userProfile?.profilePicture?.path && (
-            <AvatarImage src={userProfile.profilePicture.path} alt={user?.name} />
+    <Card className="p-6 bg-gradient-to-br from-indigo-500/10 via-cyan-500/10 to-orange-500/10 dark:from-indigo-950/20 dark:via-cyan-950/20 dark:to-orange-950/20 border-indigo-200/30 dark:border-indigo-800/30 shadow-lg hover-lift" data-testid="card-profile">
+      <div className="flex flex-col items-center text-center space-y-4 animate-fadeIn">
+        <Avatar className="h-28 w-28 ring-4 ring-indigo-200 dark:ring-indigo-800/50 shadow-xl">
+          {profilePictureUrl && (
+            <AvatarImage src={profilePictureUrl} alt={user?.name} />
           )}
-          <AvatarFallback className="text-2xl bg-gradient-to-br from-blue-600 to-purple-600 text-white">{initials}</AvatarFallback>
+          <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-indigo-600 to-cyan-600 text-white">{initials}</AvatarFallback>
         </Avatar>
 
-        <div className="w-full">
-          <h3 className="text-xl font-semibold" data-testid="text-user-name">
+        <div className="w-full space-y-2">
+          <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-cyan-600 dark:from-indigo-400 dark:to-cyan-400 bg-clip-text text-transparent" data-testid="text-user-name">
             {userProfile?.name || user?.name}
           </h3>
-          <Badge variant="secondary" className="mt-2" data-testid="badge-user-role">
-            {isTeacher(user) ? "Teacher" : "Student"}
+          <Badge variant="secondary" className="mt-2 bg-gradient-to-r from-indigo-500/20 to-cyan-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 font-semibold" data-testid="badge-user-role">
+            {isTeacher(user) ? "👨‍🏫 Teacher" : "👨‍🎓 Student"}
           </Badge>
           {userProfile?.bio && (
-            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-              {userProfile.bio}
+            <p className="text-sm text-foreground/60 dark:text-foreground/70 mt-3 line-clamp-2 italic">
+              "{userProfile.bio}"
             </p>
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-3 w-full pt-4 border-t">
-          <div>
-            <div className="text-2xl font-bold" data-testid="text-projects-count">
+        <div className="grid grid-cols-3 gap-3 w-full pt-6 border-t border-indigo-200 dark:border-indigo-800/30">
+          <div className="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/30">
+            <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400" data-testid="text-projects-count">
               {stats.projectsCount}
             </div>
-            <div className="text-xs text-muted-foreground">Projects</div>
+            <div className="text-xs text-muted-foreground font-medium mt-1">📁 Projects</div>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-green-600" data-testid="text-rating-count">
+          <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400" data-testid="text-rating-count">
               {stats.rating}
             </div>
-            <div className="text-xs text-muted-foreground">👍</div>
+            <div className="text-xs text-muted-foreground font-medium mt-1">👍 Likes</div>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-red-600">
+          <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/30">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
               {stats.totalThumbsDown}
             </div>
-            <div className="text-xs text-muted-foreground">👎</div>
+            <div className="text-xs text-muted-foreground font-medium mt-1">👎 Dislikes</div>
           </div>
         </div>
 
         <Link href="/profile" className="w-full">
-          <Button variant="outline" className="w-full" data-testid="button-view-profile">
-            View Profile
+          <Button className="w-full btn-gradient" data-testid="button-view-profile">
+            View Full Profile
           </Button>
         </Link>
       </div>

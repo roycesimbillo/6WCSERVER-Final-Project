@@ -52,5 +52,15 @@ export function initializeDatabase() {
       type TEXT NOT NULL,
       FOREIGN KEY (projectId) REFERENCES projects(id)
     );
+
+    CREATE TABLE IF NOT EXISTS resumes (
+      id TEXT PRIMARY KEY,
+      userId TEXT NOT NULL,
+      name TEXT NOT NULL,
+      path TEXT NOT NULL,
+      size INTEGER NOT NULL,
+      uploadedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id)
+    );
   `);
 }

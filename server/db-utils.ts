@@ -15,12 +15,36 @@ export interface User {
 
 export function findUserByEmail(email: string): User | null {
   const stmt = db.prepare("SELECT * FROM users WHERE email = ?");
-  return stmt.get(email) as User | null;
+  const user = stmt.get(email) as any;
+  if (!user) return null;
+  
+  // Parse profilePicture if it's a JSON string
+  if (user.profilePicture && typeof user.profilePicture === 'string') {
+    try {
+      user.profilePicture = JSON.parse(user.profilePicture);
+    } catch (e) {
+      // Keep as is if parsing fails
+    }
+  }
+  
+  return user as User;
 }
 
 export function findUserById(id: string): User | null {
   const stmt = db.prepare("SELECT * FROM users WHERE id = ?");
-  return stmt.get(id) as User | null;
+  const user = stmt.get(id) as any;
+  if (!user) return null;
+  
+  // Parse profilePicture if it's a JSON string
+  if (user.profilePicture && typeof user.profilePicture === 'string') {
+    try {
+      user.profilePicture = JSON.parse(user.profilePicture);
+    } catch (e) {
+      // Keep as is if parsing fails
+    }
+  }
+  
+  return user as User;
 }
 
 export function createUser(name: string, email: string, password: string, role: string = "student"): User {
@@ -182,13 +206,21 @@ export function addVote(projectId: string, userId: string, type: "up" | "down"):
   const existingVote = getUserVote(projectId, userId);
   
   if (existingVote) {
-    // Remove old vote and update thumbs
-    removeVote(existingVote.id, projectId, existingVote.type);
+    if (existingVote.type === type) {
+      // Same type - toggle off
+      const stmt = db.prepare("DELETE FROM votes WHERE id = ?");
+      stmt.run(existingVote.id);
+    } else {
+      // Different type - update
+      const stmt = db.prepare("UPDATE votes SET type = ? WHERE id = ?");
+      stmt.run(type, existingVote.id);
+    }
+  } else {
+    // New vote
+    const id = uuidv4();
+    const stmt = db.prepare("INSERT INTO votes (id, projectId, userId, type) VALUES (?, ?, ?, ?)");
+    stmt.run(id, projectId, userId, type);
   }
-  
-  const id = uuidv4();
-  const stmt = db.prepare("INSERT INTO votes (id, projectId, userId, type) VALUES (?, ?, ?, ?)");
-  stmt.run(id, projectId, userId, type);
   
   // Update thumbs count
   updateProjectVoteCounts(projectId);
@@ -221,4 +253,35 @@ export function getProjectStats() {
     approvedProjects: (approvedStmt.get() as any).count,
     totalUsers: (usersStmt.get() as any).count,
   };
+}
+
+// ===== RESUME OPERATIONS =====
+export interface Resume {
+  id: string;
+  userId: string;
+  name: string;
+  path: string;
+  size: number;
+  uploadedAt: string;
+}
+
+export function getUserResumes(userId: string): Resume[] {
+  const stmt = db.prepare("SELECT * FROM resumes WHERE userId = ? ORDER BY uploadedAt DESC");
+  return stmt.all(userId) as Resume[];
+}
+
+export function addResume(userId: string, name: string, path: string, size: number): Resume {
+  const id = uuidv4();
+  const stmt = db.prepare(
+    "INSERT INTO resumes (id, userId, name, path, size) VALUES (?, ?, ?, ?, ?)"
+  );
+  stmt.run(id, userId, name, path, size);
+  
+  const getStmt = db.prepare("SELECT * FROM resumes WHERE id = ?");
+  return getStmt.get(id) as Resume;
+}
+
+export function deleteResume(resumeId: string): void {
+  const stmt = db.prepare("DELETE FROM resumes WHERE id = ?");
+  stmt.run(resumeId);
 }

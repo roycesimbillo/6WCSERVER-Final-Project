@@ -103,11 +103,24 @@ router.get("/", (req, res) => {
         if (userId) {
           const stmt = db.prepare("SELECT * FROM projects WHERE uploadedBy = ? ORDER BY createdAt DESC LIMIT 50");
           const rows: any[] = stmt.all(userId);
-          projects = rows.map(row => ({
-            ...row,
-            tags: row.tags ? JSON.parse(row.tags) : [],
-            files: row.files ? JSON.parse(row.files) : [],
-          }));
+          projects = rows.map(row => {
+            // Get comments for this project
+            const commentStmt = db.prepare("SELECT * FROM comments WHERE projectId = ? ORDER BY createdAt DESC");
+            const comments = commentStmt.all(row.id) as any[];
+            
+            // Get votes for this project
+            const voteStmt = db.prepare("SELECT * FROM votes WHERE projectId = ?");
+            const votes = voteStmt.all(row.id) as any[];
+            
+            return {
+              ...row,
+              id: row.id,
+              tags: row.tags ? JSON.parse(row.tags) : [],
+              files: row.files ? JSON.parse(row.files) : [],
+              comments: comments,
+              votes: votes,
+            };
+          });
         } else if (status) {
           projects = findProjectsByStatus(status as string, 50);
         } else {

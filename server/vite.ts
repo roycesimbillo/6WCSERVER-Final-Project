@@ -20,18 +20,21 @@ export function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: Express, server: Server) {
+  console.log("[Vite] Starting Vite server setup...");
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
     allowedHosts: true as const,
   };
 
+  console.log("[Vite] Creating Vite server instance...");
   const vite = await createViteServer({
     ...viteConfig,
     configFile: false,
     customLogger: {
       ...viteLogger,
       error: (msg, options) => {
+        console.error("[Vite Error]", msg);
         viteLogger.error(msg, options);
         process.exit(1);
       },
@@ -40,7 +43,10 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
+  console.log("[Vite] Using Vite middlewares...");
   app.use(vite.middlewares);
+  
+  console.log("[Vite] Setting up catch-all route...");
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 

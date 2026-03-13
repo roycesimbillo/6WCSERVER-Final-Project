@@ -1,5 +1,5 @@
 import express from "express";
-import { findUserById, updateUserProfile } from "../db-utils";
+import { findUserById, updateUserProfile, getUserResumes, addResume, deleteResume } from "../db-utils";
 import { ensureAuth } from "./auth";
 import multer from "multer";
 import path from "path";
@@ -82,6 +82,54 @@ router.get("/:id/stats", ensureAuth, (req, res) => {
   }
 });
 
+router.post("/:id/resumes", ensureAuth, upload.array("resumes", 10), (req, res) => {
+  try {
+    const userId = req.params.id;
+    const currentUser = req.session.user;
+    if (currentUser?.id !== userId && !(currentUser?.role === "admin" || currentUser?.role === "teacher"))
+      return res.status(403).json({ message: "Not authorized" });
+
+    if (!req.files || (req.files as Express.Multer.File[]).length === 0) 
+      return res.status(400).json({ message: "No files uploaded" });
+
+    const addedResumes = (req.files as Express.Multer.File[]).map(file =>
+      addResume(userId, file.originalname, `/uploads/${file.filename}`, file.size)
+    );
+
+    res.json({ message: "Resumes uploaded", resumes: addedResumes });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/:id/resumes", ensureAuth, (req, res) => {
+  try {
+    const userId = req.params.id;
+    const resumes = getUserResumes(userId);
+    res.json(resumes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.delete("/:id/resumes/:resumeId", ensureAuth, (req, res) => {
+  try {
+    const { id: userId, resumeId } = req.params;
+    const currentUser = req.session.user;
+    if (currentUser?.id !== userId && !(currentUser?.role === "admin" || currentUser?.role === "teacher"))
+      return res.status(403).json({ message: "Not authorized" });
+
+    deleteResume(resumeId);
+    const resumes = getUserResumes(userId);
+    res.json({ message: "Resume deleted", resumes });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 router.post("/:id/profile-picture", ensureAuth, imageUpload.single("profilePicture"), (req, res) => {
   try {
     const userId = req.params.id;
@@ -144,27 +192,3 @@ router.put("/:id/profile", ensureAuth, (req, res) => {
 });
 
 export default router;
-
-router.post("/:id/promote", async (req, res) => {
-  try {
-    const secret = req.headers["x-promote-secret"] || req.body?.secret;
-    if (!secret || secret !== process.env.PROMOTE_SECRET) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-
-    const userId = req.params.id;
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    user.role = "admin";
-    await user.save();
-    res.json({ message: "User promoted to admin", user: { id: user._id, role: user.role } });
-  } catch (err) {
-    console.error("Promote error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});

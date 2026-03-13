@@ -10,6 +10,7 @@ import projectRoutes from "./routes/projects";
 import authRoutes from "./routes/auth";
 import passport from "passport";
 import dashboardRoutes from "./routes/dashboard";
+import usersRoutes from "./routes/users";
 import { initializeDatabase } from "./db";
 
 dotenv.config();
@@ -60,6 +61,7 @@ setupDatabase();
 
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/users", usersRoutes);
 app.use(
   "/uploads",
   express.static("uploads", {
@@ -111,15 +113,27 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+  try {
+    if (app.get("env") === "development") {
+      console.log("[Server] Setting up Vite...");
+      await setupVite(app, server);
+      console.log("[Server] Vite setup complete");
+    } else {
+      serveStatic(app);
+    }
+  } catch (err) {
+    console.error("[Server] Fatal setup error:", err);
+    process.exit(1);
   }
 
   const port = parseInt(process.env.PORT || "5000", 10);
   const host = "0.0.0.0";
   server.listen(port, host, () => {
     console.log(`🚀 Server running on ${host}:${port}`);
+  });
+
+  // Handle any uncaught exceptions
+  process.on("uncaughtException", (err) => {
+    console.error("[Server] Uncaught exception:", err);
   });
 })();

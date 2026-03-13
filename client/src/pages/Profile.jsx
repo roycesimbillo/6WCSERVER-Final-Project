@@ -88,25 +88,16 @@ export default function Profile({ currentUser }) {
         credentials: "include",
       });
 
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (parseErr) {
-        console.error("Delete parse error:", text);
-        alert("Delete failed: Invalid response from server");
-        return;
-      }
-
       if (!res.ok) {
+        const data = await res.json();
         throw new Error(data.message || "Delete failed");
       }
 
-      setMyProjects((prev) => prev.filter((p) => p._id !== projectId));
-      alert("Project deleted successfully");
+      setMyProjects((prev) => prev.filter((p) => p.id !== projectId));
+      toast({ title: "Success", description: "Project deleted successfully" });
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   };
 
@@ -116,10 +107,10 @@ export default function Profile({ currentUser }) {
   };
 
   const handleSaveEdit = async () => {
-  if (!editProject?._id) return;
+  if (!editProject?.id) return;
 
   try {
-    const res = await fetch(`/api/projects/${editProject._id}`, {
+    const res = await fetch(`/api/projects/${editProject.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -145,7 +136,7 @@ export default function Profile({ currentUser }) {
 
     // ✅ update UI with the new project data
     setMyProjects((prev) =>
-      prev.map((p) => (p._id === editProject._id ? data.project : p))
+      prev.map((p) => (p.id === editProject.id ? data.project : p))
     );
 
     alert("Project updated successfully");
@@ -244,19 +235,19 @@ export default function Profile({ currentUser }) {
   const rejectedProjects = filteredProjects("rejected");
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-gradient-modern">
       <Sidebar currentUser={currentUser} />
 
       <div className="flex-1 overflow-auto">
-        <div className="p-6 max-w-5xl mx-auto space-y-6">
+        <div className="p-8 max-w-5xl mx-auto space-y-8">
           {/* PROFILE CARD */}
-          <Card className="p-8 flex items-start gap-6">
-            <div className="flex flex-col items-center gap-2">
-              <Avatar className="h-32 w-32">
+          <Card className="p-8 flex items-start gap-8 shadow-lg hover-lift border border-card-border animate-fadeInUp">
+            <div className="flex flex-col items-center gap-3">
+              <Avatar className="h-32 w-32 border-4 border-primary shadow-lg">
                 {userProfile?.profilePicture?.path && (
                   <AvatarImage src={userProfile.profilePicture.path} alt="Profile" />
                 )}
-                <AvatarFallback className="text-4xl">
+                <AvatarFallback className="text-4xl bg-gradient-to-br from-primary to-secondary text-primary-foreground">
                   {userProfile?.name?.split(" ").map((n) => n[0]).join("") || currentUser?.name?.split(" ").map((n) => n[0]).join("") || "U"}
                 </AvatarFallback>
               </Avatar>
@@ -271,44 +262,48 @@ export default function Profile({ currentUser }) {
                 size="sm" 
                 variant="outline" 
                 onClick={() => document.getElementById("profile-pic-input").click()}
+                className="btn-gradient-orange text-white border-0"
               >
                 <Upload className="h-3 w-3 mr-1" /> Upload Photo
               </Button>
             </div>
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h1 className="text-3xl font-bold">{userProfile?.name || currentUser?.name}</h1>
-                <Button size="sm" variant="ghost" onClick={() => setIsEditingProfile(true)}>
+              <div className="flex items-center gap-3 mb-3">
+                <h1 className="text-4xl font-bold text-gradient">{userProfile?.name || currentUser?.name}</h1>
+                <Button size="sm" variant="outline" onClick={() => setIsEditingProfile(true)} className="btn-gradient">
                   <Edit className="h-4 w-4" />
                 </Button>
               </div>
-              <Badge variant="secondary" className="mb-4">
+              <Badge variant="secondary" className="mb-4 bg-secondary text-secondary-foreground font-semibold">
                 {isTeacher(currentUser) ? "Teacher" : "Student"}
               </Badge>
               {userProfile?.bio && (
-                <p className="text-muted-foreground mb-4">{userProfile.bio}</p>
+                <p className="text-muted-foreground mb-6 text-lg">{userProfile.bio}</p>
               )}
 
-              <div className="grid grid-cols-3 gap-6 mb-6">
-                <div>
-                  <div className="text-3xl font-bold">{myProjects.length}</div>
-                  <div className="text-sm text-muted-foreground">Total Projects</div>
+              <div className="grid grid-cols-3 gap-6 mb-8 p-4 bg-white/50 dark:bg-black/20 rounded-lg backdrop-blur-sm">
+                <div className="text-center hover-lift transition">
+                  <div className="text-4xl font-bold text-primary">{myProjects.length}</div>
+                  <div className="text-sm text-muted-foreground font-medium">Total Projects</div>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold">{approvedProjects.length}</div>
-                  <div className="text-sm text-muted-foreground">Approved</div>
+                <div className="text-center hover-lift transition">
+                  <div className="text-4xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">{approvedProjects.length}</div>
+                  <div className="text-sm text-muted-foreground font-medium">Approved</div>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold">
+                <div className="text-center hover-lift transition">
+                  <div className="text-4xl font-bold text-accent">
                     {myProjects.reduce((sum, p) => sum + (p.thumbsUp || 0), 0)}
                   </div>
-                  <div className="text-sm text-muted-foreground">Total Likes</div>
+                  <div className="text-sm text-muted-foreground font-medium">Total Likes</div>
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div>
-                  <h3 className="font-semibold mb-2">Resumes</h3>
+                  <h3 className="font-semibold mb-3 text-lg flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm">📄</span>
+                    Resumes
+                  </h3>
                   <input
                     id="resumes-input"
                     type="file"
@@ -317,24 +312,24 @@ export default function Profile({ currentUser }) {
                     multiple
                     onChange={handleResumesUpload}
                   />
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm" onClick={() => document.getElementById("resumes-input").click()}>
+                  <div className="flex flex-wrap gap-3">
+                    <Button variant="outline" size="sm" onClick={() => document.getElementById("resumes-input").click()} className="btn-gradient-cyan text-white border-0">
                       <Upload className="h-4 w-4 mr-2" /> Upload Resumes
                     </Button>
                     {resumes.map((resume, idx) => (
-                      <div key={idx} className="flex items-center gap-2 bg-muted px-3 py-1 rounded-md">
+                      <div key={idx} className="flex items-center gap-2 bg-muted/60 px-4 py-2 rounded-lg hover:bg-muted transition shadow-sm hover-lift">
                         <a
                           href={resume.path}
                           download={resume.name}
-                          className="text-sm hover:underline"
+                          className="text-sm font-medium hover:text-primary transition"
                         >
                           {resume.name}
                         </a>
                         <button
                           onClick={() => handleDeleteResume(idx)}
-                          className="text-destructive hover:text-destructive/80"
+                          className="text-destructive hover:text-destructive/80 transition"
                         >
-                          <Trash className="h-3 w-3" />
+                          <Trash className="h-4 w-4" />
                         </button>
                       </div>
                     ))}
@@ -345,52 +340,56 @@ export default function Profile({ currentUser }) {
           </Card>
 
           {/* PROJECTS */}
-          <div>
+          <div className="animate-fadeInUp animation-delay-200">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="all">All ({myProjects.length})</TabsTrigger>
-                <TabsTrigger value="approved">Approved ({approvedProjects.length})</TabsTrigger>
-                <TabsTrigger value="pending">Pending ({pendingProjects.length})</TabsTrigger>
-                <TabsTrigger value="rejected">Rejected ({rejectedProjects.length})</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-4 bg-white/50 dark:bg-black/20 backdrop-blur-sm shadow-md">
+                <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">All ({myProjects.length})</TabsTrigger>
+                <TabsTrigger value="approved" className="data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground">Approved ({approvedProjects.length})</TabsTrigger>
+                <TabsTrigger value="pending" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">Pending ({pendingProjects.length})</TabsTrigger>
+                <TabsTrigger value="rejected" className="data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground">Rejected ({rejectedProjects.length})</TabsTrigger>
               </TabsList>
 
               {["all", "approved", "pending", "rejected"].map((status) => (
                 <TabsContent key={status} value={status} className="mt-6 space-y-4">
-                  {loading && <p className="text-muted-foreground">Loading projects...</p>}
+                  {loading && <p className="text-muted-foreground text-center py-8 animate-pulse">Loading projects...</p>}
                   {!loading && filteredProjects(status).length === 0 && (
-                    <p>No projects found for this category.</p>
+                    <div className="text-center py-12 text-muted-foreground">
+                      <p className="text-lg">No projects found for this category.</p>
+                    </div>
                   )}
                   {!loading &&
-                    filteredProjects(status).map((project) => (
-                      <Card key={project._id} className="p-4 hover:bg-muted/50 transition">
-                        <div className="flex justify-between items-start">
-                          <Link href={`/project/${project._id}`} className="block flex-1">
-                            <h3 className="text-lg font-semibold">{project.title}</h3>
-                            <p className="text-sm text-muted-foreground mb-2">
+                    filteredProjects(status).map((project, idx) => (
+                      <Card key={project.id} className="p-5 hover:shadow-lg transition-all duration-300 hover-lift border border-card-border/50 animate-fadeInUp" style={{animationDelay: `${idx * 50}ms`}}>
+                        <div className="flex justify-between items-start gap-4">
+                          <Link href={`/project/${project.id}`} className="block flex-1 hover:no-underline">
+                            <h3 className="text-xl font-semibold text-gradient hover:text-primary transition">{project.title}</h3>
+                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                               {project.description}
                             </p>
                             <div className="flex flex-wrap gap-2">
                               {project.tags?.map((tag) => (
-                                <Badge key={tag} variant="outline">
+                                <Badge key={tag} variant="outline" className="bg-primary/5 border-primary/20 hover:bg-primary/10">
                                   {tag}
                                 </Badge>
                               ))}
                             </div>
                           </Link>
 
-                          {project.uploadedBy?._id === currentUser.id && (
-                            <div className="flex flex-col ml-4 gap-2">
+                          {project.uploadedBy === currentUser.id && (
+                            <div className="flex flex-col ml-4 gap-2 flex-shrink-0">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleEdit(project)}
+                                className="btn-gradient"
                               >
                                 <Edit className="h-4 w-4 mr-1" /> Edit
                               </Button>
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                onClick={() => handleDelete(project._id)}
+                                onClick={() => handleDelete(project.id)}
+                                className="btn-gradient-orange"
                               >
                                 <Trash className="h-4 w-4 mr-1" /> Delete
                               </Button>
@@ -408,48 +407,57 @@ export default function Profile({ currentUser }) {
 
       {/* EDIT PROJECT MODAL */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg bg-gradient-to-br from-card to-card/90 border border-card-border shadow-xl">
           <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
+            <DialogTitle className="text-2xl text-gradient">Edit Project</DialogTitle>
           </DialogHeader>
 
           {editProject && (
             <div className="space-y-4">
-              <Input
-                label="Title"
-                value={editProject.title}
-                onChange={(e) =>
-                  setEditProject({ ...editProject, title: e.target.value })
-                }
-                placeholder="Enter project title"
-              />
+              <div>
+                <label className="text-sm font-medium mb-2 block">Title</label>
+                <Input
+                  value={editProject.title}
+                  onChange={(e) =>
+                    setEditProject({ ...editProject, title: e.target.value })
+                  }
+                  placeholder="Enter project title"
+                  className="border-primary/20"
+                />
+              </div>
 
-              <Textarea
-                label="Description"
-                value={editProject.description}
-                onChange={(e) =>
-                  setEditProject({ ...editProject, description: e.target.value })
-                }
-                placeholder="Describe your project..."
-              />
+              <div>
+                <label className="text-sm font-medium mb-2 block">Description</label>
+                <Textarea
+                  value={editProject.description}
+                  onChange={(e) =>
+                    setEditProject({ ...editProject, description: e.target.value })
+                  }
+                  placeholder="Describe your project..."
+                  className="border-primary/20"
+                />
+              </div>
 
-              <Input
-                label="Course"
-                value={editProject.course}
-                onChange={(e) =>
-                  setEditProject({ ...editProject, course: e.target.value })
-                }
-                placeholder="Enter course name"
-              />
+              <div>
+                <label className="text-sm font-medium mb-2 block">Course</label>
+                <Input
+                  value={editProject.course}
+                  onChange={(e) =>
+                    setEditProject({ ...editProject, course: e.target.value })
+                  }
+                  placeholder="Enter course name"
+                  className="border-primary/20"
+                />
+              </div>
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Tags</label>
-                <div className="flex flex-wrap gap-2 mb-2">
+                <div className="flex flex-wrap gap-2 mb-3">
                   {editProject.tags?.map((tag, index) => (
                     <Badge
                       key={index}
                       variant="outline"
-                      className="flex items-center gap-1 cursor-pointer hover:bg-muted"
+                      className="flex items-center gap-1 cursor-pointer hover:bg-primary/20 hover:border-primary transition"
                     >
                       {tag}
                       <button
@@ -488,7 +496,7 @@ export default function Profile({ currentUser }) {
                         }
                       }
                     }}
-                    className="flex-1"
+                    className="flex-1 border-primary/20"
                   />
                   <Button
                     type="button"
@@ -502,6 +510,7 @@ export default function Profile({ currentUser }) {
                         });
                       }
                     }}
+                    className="btn-gradient"
                   >
                     Add
                   </Button>
@@ -510,48 +519,50 @@ export default function Profile({ currentUser }) {
             </div>
           )}
 
-          <DialogFooter className="mt-6 flex justify-end gap-2">
+          <DialogFooter className="mt-6 flex justify-end gap-3">
             <Button variant="outline" onClick={() => setIsEditing(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveEdit}>Save Changes</Button>
+            <Button onClick={handleSaveEdit} className="btn-gradient">Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* EDIT PROFILE MODAL */}
       <Dialog open={isEditingProfile} onOpenChange={setIsEditingProfile}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg bg-gradient-to-br from-card to-card/90 border border-card-border shadow-xl">
           <DialogHeader>
-            <DialogTitle>Edit Profile</DialogTitle>
+            <DialogTitle className="text-2xl text-gradient">Edit Profile</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <label className="text-sm font-medium mb-2 block">Name</label>
+              <label className="text-sm font-semibold mb-2 block">Name</label>
               <Input
                 value={profileForm.name}
                 onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
                 placeholder="Enter your name"
+                className="border-primary/20 focus:border-primary"
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Bio</label>
+              <label className="text-sm font-semibold mb-2 block">Bio</label>
               <Textarea
                 value={profileForm.bio}
                 onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
                 placeholder="Tell us about yourself..."
                 rows={4}
+                className="border-primary/20 focus:border-primary"
               />
             </div>
           </div>
 
-          <DialogFooter className="mt-6 flex justify-end gap-2">
+          <DialogFooter className="mt-6 flex justify-end gap-3">
             <Button variant="outline" onClick={() => setIsEditingProfile(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveProfile}>Save Changes</Button>
+            <Button onClick={handleSaveProfile} className="btn-gradient">Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
